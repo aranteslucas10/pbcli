@@ -1,0 +1,35 @@
+#!/bin/bash
+
+base_url='https://projectbox.softbox.com.br/api/auth'
+
+while getopts ":u:p:" o; do
+    case "${o}" in
+        u) 
+            u=${OPTARG}
+            ;;
+        p) 
+            p=${OPTARG}
+            if [ -z "${p}" ]; then
+                echo -n : 
+                read -s p
+            fi
+    esac
+done
+
+if [ -n "${u}" ] && [ -n "${p}" ]; then
+    p="$(echo -n ${p} | md5sum | cut -d' ' -f1)"
+    response=$(curl -s --cookie-jar ./cookie ${base_url} \
+    -H 'Origin: https://projectbox.softbox.com.br' \
+    -H 'Content-Type: application/json' \
+    -H 'Referer: https://projectbox.softbox.com.br/' \
+    -H 'Connection: keep-alive' \
+    --data-binary '{"usuario":"'${u}'","senha":"'${p}'"}' --compressed)
+    if [ -z "${response}" ]; then
+        echo 0
+    else
+        echo 1
+    fi
+else 
+    echo "Usage:"
+    echo "  ./auth -u <username> -p <password> (opcional, irá pedir caso não seja passado)"
+fi

@@ -1,0 +1,71 @@
+#!/bin/bash
+
+project-list() {
+    curl -s --cookie ./cookie 'https://projectbox.softbox.com.br/api/projetos' \
+    -H 'Content-Type: application/json' \
+    -H 'Accept: application/json, text/plain, */*' \
+    --data-binary '{"query":{"nao_buscar_info_detalhada":true},"opts":{"sort":{"key":"nome","order":1}},"cols":null,"id_usuario":'${ID}'}' |jq --raw-output '.data | .[] | [.id_projeto, .nome] | @tsv'
+}
+
+sprint-list() {
+    curl -s --cookie ./cookie 'https://projectbox.softbox.com.br/api/projetos/buscarSprints' \
+    -H 'Content-Type: application/json' \
+    -H 'Accept: application/json, text/plain, */*' \
+    --data-binary '{"id_projeto":'${p}'}' |\
+    jq --raw-output '.data | .[] | [.id_sprint,.nro_sprint] | @tsv'
+}
+
+history-list() {
+    curl -s --cookie ./cookie 'https://projectbox.softbox.com.br/api/sprints/buscarPbis/'${s}'' \
+    -H 'Accept: application/json, text/plain, */*' | \
+    jq --raw-output '.[] | [.id_para_o_projeto, .nome] | @tsv'
+}
+
+task-list() {
+    echo ""
+    # curl -s --cookie ./cookie 'https://projectbox.softbox.com.br/api/sprints/buscarPbis/'${s}'' \
+    # -H 'Accept: application/json, text/plain, */*' |\
+    # jq --raw-output '.[] | .id_para_o_projeto == '${h}' | .id_sprint == '${s}' | .id_projeto == '${p}' | .tarefas | @tsv'
+}
+
+config() {
+    ID=$(jq '.[] .id' conf.json)
+    if [ -z "${ID}" ]; then
+        echo "\"id\" not set, check conf.json file"
+    fi
+}
+
+while getopts ":p:s:h:" o; do
+    case "${o}" in
+        p) # project id
+            p=${OPTARG}
+            ;;
+        s) # sprint id
+            s=${OPTARG}
+            ;;
+        h) # history id
+            h=${OPTARG}
+            ;;
+        *)
+            echo "usage"
+            ;;
+    esac
+done
+
+for param in "$@"
+do 
+    config
+    case $param in 
+        ls)
+            if [ -n "${p}" ] && [ -n "${s}" ] && [ -n "${h}" ]; then
+                task-list
+            elif [ -n "${p}" ] && [ -n "${s}" ]; then
+                history-list
+            elif [ -n "${p}" ]; then 
+                sprint-list
+            else 
+                project-list
+            fi
+            ;;
+    esac
+done
