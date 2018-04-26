@@ -2,7 +2,7 @@
 
 base_url='https://projectbox.softbox.com.br/api/auth'
 
-while getopts ":u:p:" o; do
+while getopts ":u:p" o; do
     case "${o}" in
         u) 
             u=${OPTARG}
@@ -13,6 +13,7 @@ while getopts ":u:p:" o; do
                 echo -n : 
                 read -s p
             fi
+            ;;
     esac
 done
 
